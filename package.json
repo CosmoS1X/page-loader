@@ -21,7 +21,8 @@
   },
   "homepage": "https://github.com/CosmoS1X/backend-project-4#readme",
   "dependencies": {
-    "axios": "^1.7.5"
+    "axios": "^1.7.5",
+    "commander": "^12.1.0"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
