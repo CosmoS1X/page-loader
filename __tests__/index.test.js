@@ -6,26 +6,34 @@ import app from '../src/index.js';
 
 nock.disableNetConnect();
 
-const url = 'https://ru.hexlet.io/courses';
+let tmpDir;
 
-describe('test page loader', () => {
-  let tmpDir;
-  let data;
-  let fullpath;
+beforeEach(async () => {
+  tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
+});
 
-  beforeAll(async () => {
-    tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
-    data = await fsp.readFile(path.join(process.cwd(), '__fixtures__', 'test-page.html'), 'utf-8');
+it('should return the fullpath to the downloaded file', async () => {
+  const url = 'https://ru.hexlet.io/courses';
+  const data = await fsp.readFile(path.join(process.cwd(), '__fixtures__', 'test-page.html'), 'utf-8');
+  const expected = path.join(tmpDir, 'ru-hexlet-io-courses.html');
 
-    nock(/ru\.hexlet\.io/)
-      .get(/\/courses/)
-      .reply(200, data);
+  nock(/ru\.hexlet\.io/)
+    .get(/\/courses/)
+    .reply(200, data);
 
-    fullpath = await app(url, tmpDir);
-  });
+  await expect(app(url, tmpDir)).resolves.toBe(expected);
+});
 
-  test('app', async () => {
-    const expected = path.join(tmpDir, 'ru-hexlet-io-courses.html');
-    expect(fullpath).toBe(expected);
-  });
+it('should throw an error if url is not valid', async () => {
+  const url = 'http://invalid-url';
+
+  nock(url)
+    .get('/')
+    .replyWithError('Invalid URL');
+
+  await expect(app(url, tmpDir)).rejects.toThrow();
+});
+
+afterEach(async () => {
+  await fsp.rm(tmpDir, { recursive: true });
 });

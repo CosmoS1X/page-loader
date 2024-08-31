@@ -9,15 +9,13 @@ const fetchPageData = (url) => axios.get(url)
   });
 
 const getFileNameFromUrl = (url) => {
-  const [, urlWithoutScheme] = url.split('://');
-  const filename = urlWithoutScheme.split(/[^a-zA-Z0-9]/).join('-').concat('.html');
+  const urlWithoutScheme = url.replace(/https?:\/\//, '');
+  const filename = urlWithoutScheme.replace(/[^a-zA-Z0-9]/g, '-').concat('.html');
 
   return filename;
 };
 
-const savePage = (filepath, data) => {
-  fsp.writeFile(filepath, data);
-};
+const savePage = (filepath, data) => fsp.writeFile(filepath, data);
 
 export default (url, dirname) => {
   const filename = getFileNameFromUrl(url);
