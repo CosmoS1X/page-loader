@@ -23,45 +23,62 @@ const saveFile = (output, data) => fsp.writeFile(output, data);
 
 const parseName = (name) => name.replace(/[^a-zA-Z0-9]/g, '-');
 
-const makeResourcesDir = (root, dirname) => (
-  fsp.mkdir(path.join(root, dirname))
-);
+const makeResourcesDir = (root, dirname) => fsp.mkdir(path.join(root, dirname));
 
-const saveImages = (root, origin, hostname, filesDirName, htmlPath) => fsp.readFile(htmlPath, 'utf-8')
-  .then((html) => {
-    const $ = cheerio.load(html);
+const buildImgName = (hostname, src) => {
+  const link = path.join(hostname, src);
+  const ext = path.extname(link);
 
-    $('img').each((_i, elem) => {
-      const link = elem.attribs.src;
-      const extname = path.extname(link);
-      const dirname = path.dirname(link);
-      const basename = path.basename(link, extname);
-      const imgName = parseName(path.join(hostname, dirname, basename)).concat(extname);
-      const imgUrl = `${origin}${link}`;
-      const output = path.join(root, filesDirName, imgName);
+  return parseName(link.replace(ext, '')).concat(ext);
+};
 
-      if (!link.startsWith('https')) {
+const savePage = (output, html) => prettifyHTML(html)
+  .then((data) => saveFile(output, data));
+
+const saveImages = (root, url, filesDirName, htmlPath) => {
+  const { origin, hostname } = url;
+  const imgData = [];
+
+  return fsp.readFile(htmlPath, 'utf-8')
+    .then((html) => {
+      const $ = cheerio.load(html);
+
+      $('img').each((_i, elem) => {
+        const { src } = elem.attribs;
+        const imgName = buildImgName(hostname, elem.attribs.src);
+        const imgUrl = `${origin}${src}`;
+        const output = path.join(root, filesDirName, imgName);
+        const newSrc = path.join(filesDirName, imgName);
+
         // eslint-disable-next-line no-param-reassign
-        elem.attribs.src = path.join(filesDirName, imgName);
-        return fetchData(imgUrl, { responseType: 'stream' })
-          .then((buffer) => saveFile(output, buffer));
-      }
-    });
+        elem.attribs.src = newSrc;
 
-    return Promise.resolve($.html());
-  })
-  .then((html) => prettifyHTML(html))
-  .then((html) => saveFile(htmlPath, html));
+        if (src.startsWith('http')) {
+          return;
+        }
 
-export default (url, root) => {
-  const { origin, hostname, pathname } = new URL(url);
+        imgData.push({ imgUrl, output });
+      });
+
+      const promises = imgData
+        .map(({ imgUrl, output }) => fetchData(imgUrl, { responseType: 'stream' })
+          .then((data) => saveFile(output, data)));
+
+      return Promise.all(promises).then(() => Promise.resolve($.html()));
+    })
+    .then((html) => savePage(htmlPath, html));
+};
+
+export default (source, root) => {
+  const url = new URL(source);
+  const { hostname, pathname } = url;
   const htmlName = parseName(path.join(hostname, pathname)).concat('.html');
   const resourcesDirName = parseName(path.join(hostname, pathname)).concat('_files');
   const htmlPath = path.join(root, htmlName);
 
   return fetchData(url)
-    .then((html) => saveFile(htmlPath, html))
+    .then((html) => savePage(htmlPath, html))
     .then(() => makeResourcesDir(root, resourcesDirName))
-    .then(() => saveImages(root, origin, hostname, resourcesDirName, htmlPath))
+    .then(() => saveImages(root, url, resourcesDirName, htmlPath))
     .then(() => htmlPath);
 };
