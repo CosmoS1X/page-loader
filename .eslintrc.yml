@@ -13,6 +13,9 @@ parserOptions:
 rules:
   no-console: off
   import/extensions: off
+  func-names:
+    - error
+    - never
   no-underscore-dangle:
     - error
     - allow:
