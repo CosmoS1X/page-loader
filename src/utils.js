@@ -13,11 +13,11 @@ export const buildPath = (...args) => path.join(...args);
 
 export const sanitizeFileName = (name) => name.replace(/[^a-zA-Z0-9]/g, '-');
 
-export const prettifyHTML = (html) => prettier.format(html, { parser: 'html', tabWidth: 2 });
+export const prettifyHTML = (html) => prettier.format(html, { parser: 'html', tabWidth: 2, printWidth: 600 });
 
 export const buildFileName = (hostname, src) => {
   const url = buildPath(hostname, src);
-  const ext = path.extname(url);
+  const ext = path.extname(url) || '.html';
 
   return sanitizeFileName(url.replace(ext, '')).concat(ext);
 };
