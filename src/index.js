@@ -1,59 +1,62 @@
 import fsp from 'fs/promises';
-import * as cheerio from 'cheerio';
+import htmlParser from './htmlParser.js';
 import {
   fetchData,
   buildPath,
   prettifyHTML,
   sanitizeFileName,
-  buildFileName,
   readFile,
   saveFile,
 } from './utils.js';
 
-const savePage = (output, html) => prettifyHTML(html)
-  .then((data) => saveFile(output, data));
+const savePage = (filepath, html) => prettifyHTML(html)
+  .then((data) => saveFile(filepath, data));
 
-const makeResourcesDir = (root, dirname) => fsp.mkdir(buildPath(root, dirname));
+const makeResourcesDir = ({ fs: { resourcesDirPath } }) => fsp.mkdir(resourcesDirPath);
 
-const saveImages = (root, url, resourcesDirName, htmlPath) => {
-  const { origin, hostname } = url;
-  const imgData = [];
+const saveResources = (paths, resourcesDirName) => {
+  const { fs: { htmlPath } } = paths;
+  const resourceTags = ['img', 'link', 'script'];
 
   return readFile(htmlPath)
     .then((html) => {
-      const $ = cheerio.load(html);
+      const instance = htmlParser(html);
 
-      $('img').each(function () {
-        const src = $(this).attr('src');
-        const imgUrl = new URL(src, origin);
-        const imgName = buildFileName(hostname, src);
-        const outputPath = buildPath(root, resourcesDirName, imgName);
+      const promises = resourceTags
+        .flatMap((tagName) => instance.processSource(tagName, paths, resourcesDirName));
 
-        $(this).attr('src', buildPath(resourcesDirName, imgName));
-
-        imgData.push({ imgUrl, outputPath });
-      });
-
-      const promises = imgData
-        .map(({ imgUrl, outputPath }) => fetchData(imgUrl, { responseType: 'stream' })
-          .then((data) => saveFile(outputPath, data)));
-
-      return Promise.all(promises).then(() => Promise.resolve($.html()));
+      return Promise.all(promises)
+        .then(() => Promise.resolve(instance.getHTML()));
     })
     .then((html) => savePage(htmlPath, html));
 };
 
 export default (source, root) => {
-  const url = new URL(source);
-  const { hostname, pathname } = url;
+  const {
+    href, origin, hostname, pathname,
+  } = new URL(source);
   const baseName = sanitizeFileName(buildPath(hostname, pathname));
   const htmlName = baseName.concat('.html');
   const resourcesDirName = baseName.concat('_files');
+  const resourcesDirPath = buildPath(root, resourcesDirName);
   const htmlPath = buildPath(root, htmlName);
+  const paths = {
+    fs: {
+      root,
+      resourcesDirPath,
+      htmlPath,
+    },
+    url: {
+      href,
+      origin,
+      hostname,
+      pathname,
+    },
+  };
 
-  return fetchData(url)
+  return fetchData(href)
     .then((html) => savePage(htmlPath, html))
-    .then(() => makeResourcesDir(root, resourcesDirName))
-    .then(() => saveImages(root, url, resourcesDirName, htmlPath))
+    .then(() => makeResourcesDir(paths))
+    .then(() => saveResources(paths, resourcesDirName))
     .then(() => htmlPath);
 };
