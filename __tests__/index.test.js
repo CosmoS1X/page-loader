@@ -4,93 +4,113 @@ import fsp from 'fs/promises';
 import nock from 'nock';
 import os from 'os';
 import app from '../src/index.js';
+import { buildPath, readFile } from '../src/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const getFixturePath = (filename) => path.join(__dirname, '..', '__fixtures__', filename);
-const readFile = (filename, encoding = 'utf-8') => fsp.readFile(getFixturePath(filename), encoding);
 
 nock.disableNetConnect();
 
 let tmpDir;
+const url = new URL('https://ru.hexlet.io/courses');
+const { origin, pathname } = url;
+const htmlFileName = 'ru-hexlet-io-courses.html';
+const resourcesDirName = 'ru-hexlet-io-courses_files';
+const imgFileName = 'ru-hexlet-io-assets-professions-nodejs.png';
+const jsFileName = 'ru-hexlet-io-packs-js-runtime.js';
+const cssFileName = 'ru-hexlet-io-assets-application.css';
 
 beforeEach(async () => {
   tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
 });
 
 it('should return the fullpath of the loaded page', async () => {
-  const url = 'https://ru.hexlet.io/courses';
-  const html = await readFile('before.html');
-  const img = await readFile('nodejs.png');
+  const html = await readFile(getFixturePath('page-without-resources.html'));
 
-  nock('https://ru.hexlet.io')
-    .get('/courses')
+  nock(origin)
+    .get(pathname)
     .reply(200, html);
 
-  nock('https://ru.hexlet.io')
-    .get('/assets/professions/nodejs.png')
-    .reply(200, img);
-
-  const expected = path.join(tmpDir, 'ru-hexlet-io-courses.html');
+  const expected = buildPath(tmpDir, htmlFileName);
   const actual = await app(url, tmpDir);
 
   expect(actual).toBe(expected);
 });
 
-it('should save images', async () => {
-  const url = 'https://ru.hexlet.io/courses';
-  const resourcesDir = path.join(tmpDir, 'ru-hexlet-io-courses_files');
-  const imgName = 'ru-hexlet-io-assets-professions-nodejs.png';
-  const imgFilePath = path.join(resourcesDir, imgName);
-  const html = await readFile('before.html');
-  const expected = await readFile('nodejs.png');
-
-  nock('https://ru.hexlet.io')
-    .get('/courses')
-    .reply(200, html);
-
-  nock('https://ru.hexlet.io')
-    .get('/assets/professions/nodejs.png')
-    .reply(200, expected);
-
-  await app(url, tmpDir);
-
-  const actual = await fsp.readFile(imgFilePath, 'utf-8');
-
-  expect(actual).toEqual(expected);
-});
-
-it('should change links in html file', async () => {
-  const url = 'https://ru.hexlet.io/courses';
-  const html = await readFile('before.html');
-  const htmlFilePath = path.join(tmpDir, 'ru-hexlet-io-courses.html');
-  const img = await readFile('nodejs.png');
-
-  nock('https://ru.hexlet.io')
-    .get('/courses')
-    .reply(200, html);
-
-  nock('https://ru.hexlet.io')
-    .get('/assets/professions/nodejs.png')
-    .reply(200, img);
-
-  await app(url, tmpDir);
-
-  const actual = await fsp.readFile(htmlFilePath, 'utf-8');
-  const expected = await readFile('after.html');
-
-  expect(actual).toBe(expected);
-});
-
 it('should throw an error if url is not valid', async () => {
-  const url = 'http://invalid-url';
+  const invalidUrl = 'http://invalid-url';
 
-  nock(url)
+  nock(invalidUrl)
     .get('/')
     .replyWithError('Invalid URL');
 
   await expect(app(url, tmpDir)).rejects.toThrow();
+});
+
+it('should save images and change links in html to local', async () => {
+  const resourcesDir = buildPath(tmpDir, resourcesDirName);
+  const templateHTML = await readFile(getFixturePath('page-with-img-before.html'));
+  const expectedHTML = await readFile(getFixturePath('page-with-img-after.html'));
+  const expectedImg = await readFile(getFixturePath('nodejs.png'), '');
+
+  nock(origin)
+    .get(pathname)
+    .reply(200, templateHTML);
+
+  nock(origin)
+    .get('/assets/professions/nodejs.png')
+    .reply(200, expectedImg);
+
+  await app(url, tmpDir);
+
+  const actualImg = await readFile(buildPath(resourcesDir, imgFileName), '');
+  const actualHTML = await readFile(buildPath(tmpDir, htmlFileName));
+
+  expect(actualImg).toEqual(expectedImg);
+  expect(actualHTML).toBe(expectedHTML);
+});
+
+it('should save all resources and change links in html to local', async () => {
+  const resourcesDir = buildPath(tmpDir, resourcesDirName);
+  const templateHTML = await readFile(getFixturePath('page-with-resources-before.html'));
+  const expectedHTML = await readFile(getFixturePath('page-with-resources-after.html'));
+  const expectedImg = await readFile(getFixturePath('nodejs.png'), '');
+  const expectedJS = await readFile(getFixturePath('runtime.js'));
+  const expectedCSS = await readFile(getFixturePath('application.css'));
+
+  nock(origin)
+    .get(pathname)
+    .reply(200, templateHTML);
+
+  nock(origin)
+    .get('/assets/professions/nodejs.png')
+    .reply(200, expectedImg);
+
+  nock(origin)
+    .get('/packs/js/runtime.js')
+    .reply(200, expectedJS);
+
+  nock(origin)
+    .get('/assets/application.css')
+    .reply(200, expectedCSS);
+
+  nock(origin)
+    .get(pathname)
+    .reply(200, templateHTML);
+
+  await app(url, tmpDir);
+
+  const actualJS = await readFile(buildPath(resourcesDir, jsFileName));
+  const actualCSS = await readFile(buildPath(resourcesDir, cssFileName));
+  const canonicalHTML = await readFile(buildPath(resourcesDir, htmlFileName));
+  const actualHTML = await readFile(buildPath(tmpDir, htmlFileName));
+
+  expect(actualJS).toBe(expectedJS);
+  expect(actualCSS).toBe(expectedCSS);
+  expect(canonicalHTML).toBe(templateHTML);
+  expect(actualHTML).toEqual(expectedHTML);
 });
 
 afterEach(async () => {
