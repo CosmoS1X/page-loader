@@ -19,7 +19,7 @@ export default (html) => {
       $(tagName).each(function () {
         const src = $(this).attr(tagMap[tagName]);
         const { href, hostname, pathname } = new URL(src, origin);
-        if (href.startsWith(origin)) {
+        if (href.startsWith(origin) && src) {
           const fileName = buildFileName(hostname, pathname);
           const filePath = buildPath(resourcesDirName, fileName);
           const outputPath = buildPath(resourcesDirPath, fileName);
