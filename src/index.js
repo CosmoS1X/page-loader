@@ -9,10 +9,14 @@ import {
   saveFile,
 } from './utils.js';
 
+const makeRootDir = (root) => fsp.mkdir(root, { recursive: true });
+
 const savePage = (filepath, html) => prettifyHTML(html)
   .then((data) => saveFile(filepath, data));
 
-const makeResourcesDir = ({ fs: { resourcesDirPath } }) => fsp.mkdir(resourcesDirPath);
+const makeResourcesDir = ({ fs: { resourcesDirPath } }) => (
+  fsp.mkdir(resourcesDirPath, { recursive: true })
+);
 
 const saveResources = (paths, resourcesDirName) => {
   const { fs: { htmlPath } } = paths;
@@ -54,7 +58,8 @@ export default (source, root) => {
     },
   };
 
-  return fetchData(href)
+  return makeRootDir(root)
+    .then(() => fetchData(href))
     .then((html) => savePage(htmlPath, html))
     .then(() => makeResourcesDir(paths))
     .then(() => saveResources(paths, resourcesDirName))
