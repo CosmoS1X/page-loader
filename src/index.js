@@ -51,5 +51,8 @@ export default (source, root) => {
     .then((data) => fetchResources(data))
     .then((data) => saveResources(data))
     .then((data) => savePage(htmlPath, data))
-    .then(() => htmlPath);
+    .then(() => {
+      console.log(`Page was successfully downloaded into ${htmlPath}`);
+      return htmlPath;
+    });
 };
