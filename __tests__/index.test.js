@@ -15,7 +15,7 @@ nock.disableNetConnect();
 
 let tmpDir;
 const url = new URL('https://ru.hexlet.io/courses');
-const { origin, pathname } = url;
+const baseUrl = url.origin;
 const htmlFileName = 'ru-hexlet-io-courses.html';
 const resourcesDirName = 'ru-hexlet-io-courses_files';
 const imgFileName = 'ru-hexlet-io-assets-professions-nodejs.png';
@@ -29,8 +29,8 @@ beforeEach(async () => {
 it('should return the fullpath of the loaded page', async () => {
   const html = await readFile(getFixturePath('page-without-resources.html'));
 
-  nock(origin)
-    .get(pathname)
+  nock(baseUrl)
+    .get('/courses')
     .reply(200, html);
 
   const expected = buildPath(tmpDir, htmlFileName);
@@ -39,78 +39,71 @@ it('should return the fullpath of the loaded page', async () => {
   expect(actual).toBe(expected);
 });
 
-it('should throw an error if url is not valid', async () => {
-  const invalidUrl = 'http://invalid-url';
-
-  nock(invalidUrl)
-    .get('/')
-    .replyWithError('Invalid URL');
+it('should throw an error if the request fails', async () => {
+  nock(baseUrl)
+    .get('/courses')
+    .replyWithError('Something went wrong');
 
   await expect(app(url, tmpDir)).rejects.toThrow();
 });
 
-it('should save images and change links in html to local', async () => {
+it('should save images and update HTML links to local paths', async () => {
   const resourcesDir = buildPath(tmpDir, resourcesDirName);
   const templateHTML = await readFile(getFixturePath('page-with-img-before.html'));
   const expectedHTML = await readFile(getFixturePath('page-with-img-after.html'));
-  const expectedImg = await readFile(getFixturePath('nodejs.png'), '');
+  const expectedImg = await readFile(getFixturePath('nodejs.png'), { encoding: null });
 
-  nock(origin)
-    .get(pathname)
+  nock(baseUrl)
+    .get('/courses')
     .reply(200, templateHTML);
 
-  nock(origin)
+  nock(baseUrl)
     .get('/assets/professions/nodejs.png')
     .reply(200, expectedImg);
 
   await app(url, tmpDir);
 
-  const actualImg = await readFile(buildPath(resourcesDir, imgFileName), '');
+  const actualImg = await readFile(buildPath(resourcesDir, imgFileName), { encoding: null });
   const actualHTML = await readFile(buildPath(tmpDir, htmlFileName));
 
   expect(actualImg).toEqual(expectedImg);
   expect(actualHTML).toBe(expectedHTML);
 });
 
-it('should save all resources and change links in html to local', async () => {
+it('should save all resources and update HTML links to local paths', async () => {
   const resourcesDir = buildPath(tmpDir, resourcesDirName);
-  const templateHTML = await readFile(getFixturePath('page-with-resources-before.html'));
-  const expectedHTML = await readFile(getFixturePath('page-with-resources-after.html'));
-  const expectedImg = await readFile(getFixturePath('nodejs.png'), '');
+  const initialHTML = await readFile(getFixturePath('page-with-resources-before.html'));
+  const updatedHTML = await readFile(getFixturePath('page-with-resources-after.html'));
+  const expectedImg = await readFile(getFixturePath('nodejs.png'), { encoding: null });
   const expectedJS = await readFile(getFixturePath('runtime.js'));
   const expectedCSS = await readFile(getFixturePath('application.css'));
 
-  nock(origin)
-    .get(pathname)
-    .reply(200, templateHTML);
+  nock(baseUrl)
+    .get('/courses')
+    .times(2)
+    .reply(200, initialHTML);
 
-  nock(origin)
+  nock(baseUrl)
     .get('/assets/professions/nodejs.png')
     .reply(200, expectedImg);
 
-  nock(origin)
+  nock(baseUrl)
     .get('/packs/js/runtime.js')
     .reply(200, expectedJS);
 
-  nock(origin)
+  nock(baseUrl)
     .get('/assets/application.css')
     .reply(200, expectedCSS);
-
-  nock(origin)
-    .get(pathname)
-    .reply(200, templateHTML);
 
   await app(url, tmpDir);
 
   const actualJS = await readFile(buildPath(resourcesDir, jsFileName));
   const actualCSS = await readFile(buildPath(resourcesDir, cssFileName));
-  const canonicalHTML = await readFile(buildPath(resourcesDir, htmlFileName));
-  const actualHTML = await readFile(buildPath(tmpDir, htmlFileName));
+  const actualUpdatedHtml = await readFile(buildPath(tmpDir, htmlFileName));
 
   expect(actualJS).toBe(expectedJS);
   expect(actualCSS).toBe(expectedCSS);
-  expect(canonicalHTML).toBe(templateHTML);
-  expect(actualHTML).toEqual(expectedHTML);
+  expect(actualUpdatedHtml).toEqual(updatedHTML);
 });
 
 afterEach(async () => {

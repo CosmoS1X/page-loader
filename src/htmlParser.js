@@ -1,37 +1,44 @@
 import * as cheerio from 'cheerio';
-import {
-  fetchData, buildFileName, buildPath, saveFile,
-} from './utils.js';
+import { buildFileName, buildPath } from './utils.js';
+
+const tagAttributeMap = {
+  img: 'src',
+  link: 'href',
+  script: 'src',
+};
+
+const processTag = ($, tagName, baseUrl, resourcesDirPath, resourcesDirName) => {
+  const resourcesInfo = [];
+
+  $(tagName).each(function () {
+    const src = $(this).attr(tagAttributeMap[tagName]);
+
+    if (!src) return;
+
+    const { href, hostname, pathname } = new URL(src, baseUrl);
+
+    if (href.startsWith(baseUrl)) {
+      const fileName = buildFileName(hostname, pathname);
+      const filePath = buildPath(resourcesDirName, fileName);
+      const outputPath = buildPath(resourcesDirPath, fileName);
+      $(this).attr(tagAttributeMap[tagName], filePath);
+      resourcesInfo.push({ type: tagName, url: href, outputPath });
+    }
+  });
+
+  return resourcesInfo;
+};
 
 export default (html) => {
-  const tagMap = {
-    img: 'src',
-    link: 'href',
-    script: 'src',
-  };
   const $ = cheerio.load(html);
 
   return {
-    processSource: (tagName, paths, resourcesDirName) => {
-      const { fs: { resourcesDirPath }, url: { origin } } = paths;
-      const resourcePaths = [];
+    processResources: (baseUrl, resourcesDirPath, resourcesDirName) => {
+      const resourceTags = ['img', 'link', 'script'];
 
-      $(tagName).each(function () {
-        const src = $(this).attr(tagMap[tagName]);
-        const { href, hostname, pathname } = new URL(src, origin);
-        if (href.startsWith(origin) && src) {
-          const fileName = buildFileName(hostname, pathname);
-          const filePath = buildPath(resourcesDirName, fileName);
-          const outputPath = buildPath(resourcesDirPath, fileName);
-          $(this).attr(tagMap[tagName], filePath);
-          resourcePaths.push({ url: href, outputPath });
-        }
-      });
-
-      const fetchOptions = tagName === 'img' ? { responseType: 'stream' } : {};
-
-      return resourcePaths.map(({ url, outputPath }) => fetchData(url, fetchOptions)
-        .then((data) => saveFile(outputPath, data)));
+      return resourceTags.flatMap((tagName) => (
+        processTag($, tagName, baseUrl, resourcesDirPath, resourcesDirName)
+      ));
     },
     getHTML: () => $.html(),
   };
