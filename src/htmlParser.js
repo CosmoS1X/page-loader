@@ -8,25 +8,24 @@ const tagAttributeMap = {
 };
 
 const processTag = ($, tagName, baseUrl, resourcesDirPath, resourcesDirName) => {
-  const resourcesInfo = [];
+  const resourcesMeta = [];
 
   $(tagName).each(function () {
     const src = $(this).attr(tagAttributeMap[tagName]);
-
-    if (!src) return;
-
     const { href, hostname, pathname } = new URL(src, baseUrl);
 
-    if (href.startsWith(baseUrl)) {
-      const fileName = buildFileName(hostname, pathname);
-      const filePath = buildPath(resourcesDirName, fileName);
-      const outputPath = buildPath(resourcesDirPath, fileName);
-      $(this).attr(tagAttributeMap[tagName], filePath);
-      resourcesInfo.push({ type: tagName, url: href, outputPath });
-    }
+    if (!src || !href.startsWith(baseUrl)) return;
+
+    const fileName = buildFileName(hostname, pathname);
+    const filePath = buildPath(resourcesDirName, fileName);
+    const outputPath = buildPath(resourcesDirPath, fileName);
+
+    $(this).attr(tagAttributeMap[tagName], filePath);
+
+    resourcesMeta.push({ type: tagName, url: href, outputPath });
   });
 
-  return resourcesInfo;
+  return resourcesMeta;
 };
 
 export default (html) => {
@@ -36,9 +35,8 @@ export default (html) => {
     processResources: (baseUrl, resourcesDirPath, resourcesDirName) => {
       const resourceTags = ['img', 'link', 'script'];
 
-      return resourceTags.flatMap((tagName) => (
-        processTag($, tagName, baseUrl, resourcesDirPath, resourcesDirName)
-      ));
+      return resourceTags
+        .flatMap((tagName) => processTag($, tagName, baseUrl, resourcesDirPath, resourcesDirName));
     },
     getHTML: () => $.html(),
   };
