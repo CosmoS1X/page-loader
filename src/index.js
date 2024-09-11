@@ -1,59 +1,60 @@
-import fsp from 'fs/promises';
-import * as cheerio from 'cheerio';
+import htmlParser from './htmlParser.js';
 import {
   fetchData,
   buildPath,
   prettifyHTML,
   sanitizeFileName,
-  buildFileName,
-  readFile,
   saveFile,
+  makeDir,
 } from './utils.js';
 
-const savePage = (output, html) => prettifyHTML(html)
-  .then((data) => saveFile(output, data));
+const getResourcesMeta = (html, baseUrl, resourcesDirPath, resourcesDirName) => {
+  const instance = htmlParser(html);
+  const resourcesMeta = instance.processResources(baseUrl, resourcesDirPath, resourcesDirName);
 
-const makeResourcesDir = (root, dirname) => fsp.mkdir(buildPath(root, dirname));
-
-const saveImages = (root, url, resourcesDirName, htmlPath) => {
-  const { origin, hostname } = url;
-  const imgData = [];
-
-  return readFile(htmlPath)
-    .then((html) => {
-      const $ = cheerio.load(html);
-
-      $('img').each(function () {
-        const src = $(this).attr('src');
-        const imgUrl = new URL(src, origin);
-        const imgName = buildFileName(hostname, src);
-        const outputPath = buildPath(root, resourcesDirName, imgName);
-
-        $(this).attr('src', buildPath(resourcesDirName, imgName));
-
-        imgData.push({ imgUrl, outputPath });
-      });
-
-      const promises = imgData
-        .map(({ imgUrl, outputPath }) => fetchData(imgUrl, { responseType: 'stream' })
-          .then((data) => saveFile(outputPath, data)));
-
-      return Promise.all(promises).then(() => Promise.resolve($.html()));
-    })
-    .then((html) => savePage(htmlPath, html));
+  return { html: instance.getHTML(), resourcesMeta };
 };
 
-export default (source, root) => {
-  const url = new URL(source);
-  const { hostname, pathname } = url;
+const fetchResources = ((resourcesMeta) => {
+  const promises = resourcesMeta.map(({ type, url, outputPath }) => {
+    const fetchOptions = (type === 'img') ? { responseType: 'stream' } : {};
+
+    return fetchData(url, fetchOptions).then((data) => ({ outputPath, data }));
+  });
+
+  return Promise.all(promises);
+});
+
+const saveResources = (resourcesData) => {
+  const promises = resourcesData.map(({ outputPath, data }) => saveFile(outputPath, data));
+
+  return Promise.all(promises);
+};
+
+const savePage = (htmlPath, { html, resourcesMeta }) => prettifyHTML(html)
+  .then((data) => saveFile(htmlPath, data))
+  .then(() => resourcesMeta);
+
+const makePageDirs = (...paths) => Promise.all(paths.map((path) => makeDir(path)));
+
+export default (pageUrl, root) => {
+  const {
+    origin: baseUrl, hostname, pathname,
+  } = new URL(pageUrl);
   const baseName = sanitizeFileName(buildPath(hostname, pathname));
   const htmlName = baseName.concat('.html');
   const resourcesDirName = baseName.concat('_files');
+  const resourcesDirPath = buildPath(root, resourcesDirName);
   const htmlPath = buildPath(root, htmlName);
 
-  return fetchData(url)
-    .then((html) => savePage(htmlPath, html))
-    .then(() => makeResourcesDir(root, resourcesDirName))
-    .then(() => saveImages(root, url, resourcesDirName, htmlPath))
-    .then(() => htmlPath);
+  return makePageDirs(root, resourcesDirPath)
+    .then(() => fetchData(pageUrl))
+    .then((html) => getResourcesMeta(html, baseUrl, resourcesDirPath, resourcesDirName))
+    .then((data) => savePage(htmlPath, data))
+    .then((resourcesMeta) => fetchResources(resourcesMeta))
+    .then((resourcesData) => saveResources(resourcesData))
+    .then(() => {
+      console.log(`Page was successfully downloaded into ${htmlPath}`);
+      return htmlPath;
+    });
 };
