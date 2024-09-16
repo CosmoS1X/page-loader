@@ -15,8 +15,10 @@ export const logger = debug('page-loader');
 export const fetchData = (url, options = {}) => {
   logger(`Fetch data from ${url}`);
 
+  const ext = path.extname(url);
+
   return axios.get(url, options)
-    .then((response) => response.data)
+    .then(({ data }) => (ext === '.json' ? JSON.stringify(data, null, 2) : data))
     .catch((error) => {
       throw error;
     });
