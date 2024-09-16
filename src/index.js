@@ -7,7 +7,8 @@ import {
   saveFile,
   makeDir,
 } from './utils.js';
-import FetchError from './errors/FetchError.js';
+import NetworkError from './errors/NetworkError.js';
+import FileSystemError from './errors/FileSystemError.js';
 
 const getResourcesMeta = (html, baseUrl, resourcesDirPath) => {
   const instance = htmlParser(html);
@@ -41,9 +42,15 @@ const makePageDirs = (...paths) => Promise.all(paths.map((path) => makeDir(path)
 const errorHandler = (error) => {
   console.error(error.message);
 
-  const exitCode = error instanceof FetchError ? 1 : 2;
+  if (error instanceof NetworkError) {
+    return process.exit(1);
+  }
 
-  process.exit(exitCode);
+  if (error instanceof FileSystemError) {
+    return process.exit(2);
+  }
+
+  throw error;
 };
 
 export default (pageUrl, root) => {

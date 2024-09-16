@@ -1,4 +1,4 @@
-export default class FetchError extends Error {
+export default class NetworkError extends Error {
   constructor({ code, message }, url) {
     super(`${code}: ${message}, fetch '${url}'`);
 
