@@ -1,3 +1,6 @@
+import {
+  jest, beforeEach, it, expect,
+} from '@jest/globals';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fsp from 'fs/promises';
@@ -14,8 +17,8 @@ const getFixturePath = (filename) => path.join(__dirname, '..', '__fixtures__', 
 nock.disableNetConnect();
 
 let tmpDir;
-const url = new URL('https://ru.hexlet.io/courses');
-const baseUrl = url.origin;
+let spy;
+const { href: url, origin: baseUrl } = new URL('https://ru.hexlet.io/courses');
 const htmlFileName = 'ru-hexlet-io-courses.html';
 const resourcesDirName = 'ru-hexlet-io-courses_files';
 const imgFileName = 'ru-hexlet-io-assets-professions-nodejs.png';
@@ -24,6 +27,7 @@ const cssFileName = 'ru-hexlet-io-assets-application.css';
 
 beforeEach(async () => {
   tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
+  spy = jest.spyOn(process, 'exit').mockImplementation(() => {});
 });
 
 it('should return the fullpath of the loaded page', async () => {
@@ -37,14 +41,6 @@ it('should return the fullpath of the loaded page', async () => {
   const actual = await app(url, tmpDir);
 
   expect(actual).toBe(expected);
-});
-
-it('should throw an error if the request fails', async () => {
-  nock(baseUrl)
-    .get('/courses')
-    .replyWithError('Something went wrong');
-
-  await expect(app(url, tmpDir)).rejects.toThrow();
 });
 
 it('should save images and update HTML links to local paths', async () => {
@@ -104,6 +100,28 @@ it('should save all resources and update HTML links to local paths', async () =>
   expect(actualJS).toBe(expectedJS);
   expect(actualCSS).toBe(expectedCSS);
   expect(actualUpdatedHtml).toEqual(updatedHTML);
+});
+
+it('should exit with error code 1 if the request fails', async () => {
+  nock(baseUrl)
+    .get('/courses')
+    .reply(404);
+
+  await app(url, tmpDir);
+
+  expect(spy).toHaveBeenCalledWith(1);
+});
+
+it('should exit with error code 2 if saving the file fails', async () => {
+  const html = await readFile(getFixturePath('page-without-resources.html'));
+
+  nock((baseUrl))
+    .get('/courses')
+    .reply(200, html);
+
+  await app(url, '/bin');
+
+  expect(spy).toHaveBeenCalledWith(2);
 });
 
 afterEach(async () => {
