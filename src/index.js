@@ -9,9 +9,9 @@ import {
 } from './utils.js';
 import FetchError from './errors/FetchError.js';
 
-const getResourcesMeta = (html, baseUrl, resourcesDirPath, resourcesDirName) => {
+const getResourcesMeta = (html, baseUrl, resourcesDirPath) => {
   const instance = htmlParser(html);
-  const resourcesMeta = instance.processResources(baseUrl, resourcesDirPath, resourcesDirName);
+  const resourcesMeta = instance.processResources(baseUrl, resourcesDirPath);
 
   return { html: instance.getHTML(), resourcesMeta };
 };
@@ -56,7 +56,7 @@ export default (pageUrl, root) => {
 
   return makePageDirs(root, resourcesDirPath)
     .then(() => fetchData(pageUrl))
-    .then((html) => getResourcesMeta(html, baseUrl, resourcesDirPath, resourcesDirName))
+    .then((html) => getResourcesMeta(html, baseUrl, resourcesDirPath))
     .then((data) => savePage(htmlPath, data))
     .then((resourcesMeta) => fetchResources(resourcesMeta))
     .then((resourcesData) => saveResources(resourcesData))
