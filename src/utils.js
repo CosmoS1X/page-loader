@@ -3,6 +3,7 @@ import fsp from 'fs/promises';
 import * as prettier from 'prettier';
 import { createRequire } from 'module';
 import debug from 'debug';
+import FetchError from './errors/FetchError.js';
 
 const require = createRequire(import.meta.url);
 
@@ -19,8 +20,8 @@ export const fetchData = (url, options = {}) => {
 
   return axios.get(url, options)
     .then(({ data }) => (ext === '.json' ? JSON.stringify(data, null, 2) : data))
-    .catch((error) => {
-      throw error;
+    .catch(({ code, message }) => {
+      throw new FetchError({ code, message }, url);
     });
 };
 

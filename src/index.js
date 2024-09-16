@@ -7,6 +7,7 @@ import {
   saveFile,
   makeDir,
 } from './utils.js';
+import FetchError from './errors/FetchError.js';
 
 const getResourcesMeta = (html, baseUrl, resourcesDirPath, resourcesDirName) => {
   const instance = htmlParser(html);
@@ -37,10 +38,16 @@ const savePage = (htmlPath, { html, resourcesMeta }) => prettifyHTML(html)
 
 const makePageDirs = (...paths) => Promise.all(paths.map((path) => makeDir(path)));
 
+const errorHandler = (error) => {
+  console.error(error.message);
+
+  const exitCode = error instanceof FetchError ? 1 : 2;
+
+  process.exit(exitCode);
+};
+
 export default (pageUrl, root) => {
-  const {
-    origin: baseUrl, hostname, pathname,
-  } = new URL(pageUrl);
+  const { origin: baseUrl, hostname, pathname } = new URL(pageUrl);
   const baseName = sanitizeFileName(buildPath(hostname, pathname));
   const htmlName = baseName.concat('.html');
   const resourcesDirName = baseName.concat('_files');
@@ -56,5 +63,6 @@ export default (pageUrl, root) => {
     .then(() => {
       console.log(`Page was successfully downloaded into ${htmlPath}`);
       return htmlPath;
-    });
+    })
+    .catch((error) => errorHandler(error));
 };
