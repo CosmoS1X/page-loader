@@ -7,8 +7,6 @@ import {
   saveFile,
   makeDir,
 } from './utils.js';
-import NetworkError from './errors/NetworkError.js';
-import FileSystemError from './errors/FileSystemError.js';
 
 const getResourcesMeta = (html, baseUrl, resourcesDirPath) => {
   const instance = htmlParser(html);
@@ -42,15 +40,14 @@ const makePageDirs = (...paths) => Promise.all(paths.map((path) => makeDir(path)
 const errorHandler = (error) => {
   console.error(error.message);
 
-  if (error instanceof NetworkError) {
-    return process.exit(1);
+  switch (error.name) {
+    case 'NetworkError':
+      return process.exit(1);
+    case 'FileSystemError':
+      return process.exit(2);
+    default:
+      throw error;
   }
-
-  if (error instanceof FileSystemError) {
-    return process.exit(2);
-  }
-
-  throw error;
 };
 
 export default (pageUrl, root) => {
