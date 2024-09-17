@@ -7,7 +7,9 @@ import fsp from 'fs/promises';
 import nock from 'nock';
 import os from 'os';
 import app from '../src/index.js';
-import { buildPath, readFile } from '../src/utils.js';
+import {
+  buildPath, makeDir, saveFile, readFile,
+} from '../src/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +26,7 @@ const resourcesDirName = 'ru-hexlet-io-courses_files';
 const imgFileName = 'ru-hexlet-io-assets-professions-nodejs.png';
 const jsFileName = 'ru-hexlet-io-packs-js-runtime.js';
 const cssFileName = 'ru-hexlet-io-assets-application.css';
+const jsonFileName = 'ru-hexlet-io-manifest.json';
 
 beforeEach(async () => {
   tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
@@ -73,6 +76,7 @@ it('should save all resources and update HTML links to local paths', async () =>
   const expectedImg = await readFile(getFixturePath('nodejs.png'), { encoding: null });
   const expectedJS = await readFile(getFixturePath('runtime.js'));
   const expectedCSS = await readFile(getFixturePath('application.css'));
+  const expectedJSON = (await readFile(getFixturePath('manifest.json')));
 
   nock(baseUrl)
     .get('/courses')
@@ -91,18 +95,32 @@ it('should save all resources and update HTML links to local paths', async () =>
     .get('/assets/application.css')
     .reply(200, expectedCSS);
 
+  nock(baseUrl)
+    .get('/manifest.json')
+    .reply(200, expectedJSON);
+
   await app(url, tmpDir);
 
   const actualJS = await readFile(buildPath(resourcesDir, jsFileName));
   const actualCSS = await readFile(buildPath(resourcesDir, cssFileName));
+  const actualJSON = (await readFile(buildPath(resourcesDir, jsonFileName)));
   const actualUpdatedHtml = await readFile(buildPath(tmpDir, htmlFileName));
 
   expect(actualJS).toBe(expectedJS);
   expect(actualCSS).toBe(expectedCSS);
+  expect(actualJSON).toBe(expectedJSON);
   expect(actualUpdatedHtml).toEqual(updatedHTML);
 });
 
-it('should exit with error code 1 if the request fails', async () => {
+it('should throw an error if the app cannot create a dir', async () => {
+  await expect(makeDir('/bin/page-loader')).rejects.toThrow();
+});
+
+it('should throw an error if the app cannot save a file', async () => {
+  await expect(saveFile('/tmp/page-loader/', 'data')).rejects.toThrow();
+});
+
+it('should exit with code 1 if the request fails', async () => {
   nock(baseUrl)
     .get('/courses')
     .reply(404);
@@ -112,7 +130,7 @@ it('should exit with error code 1 if the request fails', async () => {
   expect(spy).toHaveBeenCalledWith(1);
 });
 
-it('should exit with error code 2 if saving the file fails', async () => {
+it('should exit with code 2 if saving the file fails', async () => {
   const html = await readFile(getFixturePath('page-without-resources.html'));
 
   nock((baseUrl))
