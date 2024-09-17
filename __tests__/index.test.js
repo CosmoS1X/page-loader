@@ -7,14 +7,13 @@ import fsp from 'fs/promises';
 import nock from 'nock';
 import os from 'os';
 import app from '../src/index.js';
-import {
-  buildPath, makeDir, saveFile, readFile,
-} from '../src/utils.js';
+import { buildPath, makeDir, saveFile } from '../src/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const getFixturePath = (filename) => path.join(__dirname, '..', '__fixtures__', filename);
+const readFile = (filepath, options = { encoding: 'utf-8' }) => fsp.readFile(filepath, options);
 
 nock.disableNetConnect();
 

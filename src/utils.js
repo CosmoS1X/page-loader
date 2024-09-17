@@ -39,8 +39,6 @@ export const buildFileName = (hostname, src) => {
   return sanitizeFileName(url.replace(ext, '')).concat(ext);
 };
 
-export const readFile = (filepath, options = { encoding: 'utf-8' }) => fsp.readFile(filepath, options);
-
 export const saveFile = (filepath, data) => fsp.writeFile(filepath, data)
   .catch((error) => {
     throw new FileSystemError(error);
