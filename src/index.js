@@ -46,6 +46,7 @@ const errorHandler = (error) => {
     case 'FileSystemError':
       return process.exit(2);
     default:
+      /* c8 ignore next */
       throw error;
   }
 };
