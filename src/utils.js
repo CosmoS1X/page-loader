@@ -15,8 +15,6 @@ const axios = require('axios');
 export const logger = debug('page-loader');
 
 export const fetchData = (url, options = {}) => {
-  logger(`Fetch data from ${url}`);
-
   const ext = path.extname(url);
 
   return axios.get(url, options)
