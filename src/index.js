@@ -35,20 +35,6 @@ const savePage = (htmlPath, { html, resourcesMeta }) => prettifyHTML(html)
 
 const makePageDirs = (...paths) => Promise.all(paths.map((path) => makeDir(path)));
 
-const errorHandler = (error) => {
-  console.error(error.message);
-
-  switch (error.name) {
-    case 'NetworkError':
-      return process.exit(1);
-    case 'FileSystemError':
-      return process.exit(2);
-    default:
-      /* c8 ignore next */
-      throw error;
-  }
-};
-
 export default (pageUrl, root) => {
   const { origin: baseUrl, hostname, pathname } = new URL(pageUrl);
   const baseName = sanitizeFileName(buildPath(hostname, pathname));
@@ -62,9 +48,5 @@ export default (pageUrl, root) => {
     .then((html) => getResourcesMeta(html, baseUrl, resourcesDirPath))
     .then((data) => savePage(htmlPath, data))
     .then((resourcesMeta) => downloadResources(resourcesMeta))
-    .then(() => {
-      console.log(`Page was successfully downloaded into ${htmlPath}`);
-      return htmlPath;
-    })
-    .catch((error) => errorHandler(error));
+    .then(() => htmlPath);
 };
