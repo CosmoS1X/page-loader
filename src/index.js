@@ -1,3 +1,4 @@
+import Listr from 'listr';
 import htmlParser from './htmlParser.js';
 import {
   fetchData,
@@ -15,20 +16,17 @@ const getResourcesMeta = (html, baseUrl, resourcesDirPath) => {
   return { html: instance.getHTML(), resourcesMeta };
 };
 
-const fetchResources = ((resourcesMeta) => {
-  const promises = resourcesMeta.map(({ type, url, outputPath }) => {
+const downloadResources = (resourcesMeta) => {
+  const tasks = new Listr(resourcesMeta.map(({ type, url, outputPath }) => {
     const fetchOptions = (type === 'img') ? { responseType: 'stream' } : {};
 
-    return fetchData(url, fetchOptions).then((data) => ({ outputPath, data }));
-  });
+    return {
+      title: url,
+      task: () => fetchData(url, fetchOptions).then((data) => saveFile(outputPath, data)),
+    };
+  }), { concurrent: true });
 
-  return Promise.all(promises);
-});
-
-const saveResources = (resourcesData) => {
-  const promises = resourcesData.map(({ outputPath, data }) => saveFile(outputPath, data));
-
-  return Promise.all(promises);
+  return tasks.run();
 };
 
 const savePage = (htmlPath, { html, resourcesMeta }) => prettifyHTML(html)
@@ -63,8 +61,7 @@ export default (pageUrl, root) => {
     .then(() => fetchData(pageUrl))
     .then((html) => getResourcesMeta(html, baseUrl, resourcesDirPath))
     .then((data) => savePage(htmlPath, data))
-    .then((resourcesMeta) => fetchResources(resourcesMeta))
-    .then((resourcesData) => saveResources(resourcesData))
+    .then((resourcesMeta) => downloadResources(resourcesMeta))
     .then(() => {
       console.log(`Page was successfully downloaded into ${htmlPath}`);
       return htmlPath;
