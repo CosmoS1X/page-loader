@@ -18,11 +18,11 @@ const getResourcesMeta = (html, baseUrl, resourcesDirPath) => {
 
 const downloadResources = (resourcesMeta) => {
   const tasks = new Listr(resourcesMeta.map(({ type, url, outputPath }) => {
-    const fetchOptions = (type === 'img') ? { responseType: 'stream' } : {};
+    const responseType = type === 'img' ? 'stream' : 'json';
 
     return {
       title: url,
-      task: () => fetchData(url, fetchOptions).then((data) => saveFile(outputPath, data)),
+      task: () => fetchData(url, responseType).then((data) => saveFile(outputPath, data)),
     };
   }), { concurrent: true });
 

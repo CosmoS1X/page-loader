@@ -14,15 +14,16 @@ const axios = require('axios');
 
 export const logger = debug('page-loader');
 
-export const fetchData = (url, options = {}) => {
-  const ext = path.extname(url);
-
-  return axios.get(url, options)
-    .then(({ data }) => (ext === '.json' ? JSON.stringify(data, null, 2) : data))
-    .catch(({ code, message }) => {
-      throw new NetworkError({ code, message }, url);
-    });
-};
+export const fetchData = (url, responseType = 'json') => axios({
+  url,
+  method: 'get',
+  responseType,
+  transformResponse: [(data) => data], // prevent forced JSON.parse
+})
+  .then((response) => response.data)
+  .catch((error) => {
+    throw new NetworkError(error, url);
+  });
 
 export const buildPath = (...args) => path.join(...args);
 
