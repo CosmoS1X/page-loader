@@ -115,6 +115,12 @@ it('should throw an error if the request fails', async () => {
   await expect(app(url, tmpDir)).rejects.toThrow();
 });
 
+it('should throw an error if the path does not exist', async () => {
+  const notExistsPath = '/tmp/unknown';
+
+  await expect(app(url, notExistsPath)).rejects.toThrow();
+});
+
 it('should throw an error if the app cannot create a dir', async () => {
   await expect(makeDir('/bin/page-loader')).rejects.toThrow();
 });
