@@ -43,7 +43,8 @@ export const saveFile = (filepath, data) => fsp.writeFile(filepath, data)
     throw new FileSystemError(error);
   });
 
-export const makeDir = (dirpath) => fsp.mkdir(dirpath, { recursive: true })
+export const makeDir = (dirpath) => fsp.access(dirpath)
+  .catch(() => fsp.mkdir(dirpath))
   .catch((error) => {
     throw new FileSystemError(error);
   });
