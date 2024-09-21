@@ -18,7 +18,7 @@ export const fetchData = (url, responseType = 'json') => axios({
   url,
   method: 'get',
   responseType,
-  transformResponse: [(data) => (typeof data === 'string' ? data.trim() : data)],
+  transformResponse: [(data) => data],
 })
   .then((response) => response.data)
   .catch((error) => {
@@ -38,10 +38,13 @@ export const buildFileName = (hostname, src) => {
   return sanitizeFileName(url.replace(ext, '')).concat(ext);
 };
 
-export const saveFile = (filepath, data) => fsp.writeFile(filepath, data, { encoding: null })
-  .catch((error) => {
-    throw new FileSystemError(error);
-  });
+export const saveFile = (filepath, data) => {
+  console.log('BEGIN\n', 'DATA: ', data, '\nEND');
+  return fsp.writeFile(filepath, data, { encoding: null })
+    .catch((error) => {
+      throw new FileSystemError(error);
+    });
+};
 
 export const makeDir = (dirpath) => fsp.access(dirpath)
   .catch(() => fsp.mkdir(dirpath))

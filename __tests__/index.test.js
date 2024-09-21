@@ -69,9 +69,9 @@ it('should save all resources and update HTML links to local paths', async () =>
   const initialHTML = await readFile(getFixturePath('page-with-resources-before.html'));
   const updatedHTML = await readFile(getFixturePath('page-with-resources-after.html'));
   const expectedImg = await readFile(getFixturePath('nodejs.png'), { encoding: null });
-  const expectedJS = (await readFile(getFixturePath('runtime.js'))).trim();
-  const expectedCSS = (await readFile(getFixturePath('application.css'))).trim();
-  const expectedJSON = (await readFile(getFixturePath('manifest.json'))).trim();
+  const expectedJS = await readFile(getFixturePath('runtime.js'));
+  const expectedCSS = await readFile(getFixturePath('application.css'));
+  const expectedJSON = await readFile(getFixturePath('manifest.json'));
 
   nock(baseUrl)
     .get('/courses')
