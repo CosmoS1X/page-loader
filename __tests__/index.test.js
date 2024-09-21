@@ -69,9 +69,9 @@ it('should save all resources and update HTML links to local paths', async () =>
   const initialHTML = await readFile(getFixturePath('page-with-resources-before.html'));
   const updatedHTML = await readFile(getFixturePath('page-with-resources-after.html'));
   const expectedImg = await readFile(getFixturePath('nodejs.png'), { encoding: null });
-  const expectedJS = await readFile(getFixturePath('runtime.js'));
-  const expectedCSS = await readFile(getFixturePath('application.css'));
-  const expectedJSON = (await readFile(getFixturePath('manifest.json')));
+  const expectedJS = (await readFile(getFixturePath('runtime.js'))).trim();
+  const expectedCSS = (await readFile(getFixturePath('application.css'))).trim();
+  const expectedJSON = (await readFile(getFixturePath('manifest.json'))).trim();
 
   nock(baseUrl)
     .get('/courses')
@@ -98,7 +98,7 @@ it('should save all resources and update HTML links to local paths', async () =>
 
   const actualJS = await readFile(buildPath(resourcesDir, jsFileName));
   const actualCSS = await readFile(buildPath(resourcesDir, cssFileName));
-  const actualJSON = (await readFile(buildPath(resourcesDir, jsonFileName)));
+  const actualJSON = await readFile(buildPath(resourcesDir, jsonFileName));
   const actualUpdatedHtml = await readFile(buildPath(tmpDir, htmlFileName));
 
   expect(actualJS).toStrictEqual(expectedJS);
