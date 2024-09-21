@@ -18,7 +18,7 @@ export const fetchData = (url, responseType = 'json') => axios({
   url,
   method: 'get',
   responseType,
-  transformResponse: [(data) => data], // prevent forced JSON.parse
+  transformResponse: [(data) => (typeof data === 'string' ? data.trim() : data)],
 })
   .then((response) => response.data)
   .catch((error) => {
