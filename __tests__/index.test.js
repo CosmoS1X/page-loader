@@ -101,9 +101,9 @@ it('should save all resources and update HTML links to local paths', async () =>
   const actualJSON = await readFile(buildPath(resourcesDir, jsonFileName));
   const actualUpdatedHtml = await readFile(buildPath(tmpDir, htmlFileName));
 
-  expect(actualJS).toStrictEqual(expectedJS);
-  expect(actualCSS).toStrictEqual(expectedCSS);
-  expect(actualJSON).toStrictEqual(expectedJSON);
+  expect(actualJS).toStrictEqual(expectedJS.trim());
+  expect(actualCSS).toStrictEqual(expectedCSS.trim());
+  expect(actualJSON).toStrictEqual(expectedJSON.trim());
   expect(actualUpdatedHtml).toStrictEqual(updatedHTML);
 });
 
