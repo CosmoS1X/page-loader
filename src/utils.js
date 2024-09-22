@@ -3,6 +3,8 @@ import fsp from 'fs/promises';
 import * as prettier from 'prettier';
 import { createRequire } from 'module';
 import debug from 'debug';
+import NetworkError from './errors/NetworkError.js';
+import FileSystemError from './errors/FileSystemError.js';
 
 const require = createRequire(import.meta.url);
 
@@ -15,10 +17,12 @@ export const logger = debug('page-loader');
 export const fetchData = (url, options = {}) => {
   logger(`Fetch data from ${url}`);
 
+  const ext = path.extname(url);
+
   return axios.get(url, options)
-    .then((response) => response.data)
-    .catch((error) => {
-      throw error;
+    .then(({ data }) => (ext === '.json' ? JSON.stringify(data, null, 2) : data))
+    .catch(({ code, message }) => {
+      throw new NetworkError({ code, message }, url);
     });
 };
 
@@ -35,8 +39,12 @@ export const buildFileName = (hostname, src) => {
   return sanitizeFileName(url.replace(ext, '')).concat(ext);
 };
 
-export const readFile = (filepath, options = { encoding: 'utf-8' }) => fsp.readFile(filepath, options);
+export const saveFile = (filepath, data) => fsp.writeFile(filepath, data)
+  .catch((error) => {
+    throw new FileSystemError(error);
+  });
 
-export const saveFile = (filepath, data) => fsp.writeFile(filepath, data);
-
-export const makeDir = (dirpath) => fsp.mkdir(dirpath, { recursive: true });
+export const makeDir = (dirpath) => fsp.mkdir(dirpath, { recursive: true })
+  .catch((error) => {
+    throw new FileSystemError(error);
+  });

@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import path from 'path';
 import { buildFileName, buildPath } from './utils.js';
 
 const tagAttributeMap = {
@@ -7,7 +8,8 @@ const tagAttributeMap = {
   script: 'src',
 };
 
-const processTag = ($, tagName, baseUrl, resourcesDirPath, resourcesDirName) => {
+const processTag = ($, tagName, baseUrl, resourcesDirPath) => {
+  const resourcesDirName = path.basename(resourcesDirPath);
   const resourcesMeta = [];
 
   $(tagName).each(function () {
@@ -32,11 +34,11 @@ export default (html) => {
   const $ = cheerio.load(html);
 
   return {
-    processResources: (baseUrl, resourcesDirPath, resourcesDirName) => {
+    processResources: (baseUrl, resourcesDirPath) => {
       const resourceTags = ['img', 'link', 'script'];
 
       return resourceTags
-        .flatMap((tagName) => processTag($, tagName, baseUrl, resourcesDirPath, resourcesDirName));
+        .flatMap((tagName) => processTag($, tagName, baseUrl, resourcesDirPath));
     },
     getHTML: () => $.html(),
   };

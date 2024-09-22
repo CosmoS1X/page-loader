@@ -1,0 +1,15 @@
+{
+  "name": "Hexlet",
+  "icons": [
+    {
+      "src": "https://cdn2.hexlet.io/assets/icon_192_ru-2abe66e7ab2ea8aeda26964abae30718b48aff2d342c409767d7c669932d0e0d.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://cdn2.hexlet.io/assets/icon_512_ru-6f0eb552d67b1e5b40bdf3dd064e3ac8d199294ca48963f7da433e00edeea5ac.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
