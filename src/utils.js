@@ -44,6 +44,7 @@ export const saveFile = (filepath, data) => fsp.writeFile(filepath, data)
   });
 
 export const makeDir = (dirpath) => fsp.access(dirpath)
+  // create a new directory if it does not exist
   .catch(() => fsp.mkdir(dirpath))
   .catch((error) => {
     throw new FileSystemError(error);

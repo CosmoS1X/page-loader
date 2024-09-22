@@ -15,18 +15,17 @@ const { output } = program.opts();
 const catchError = ({ name, message }) => {
   console.error(message);
 
-  if (name === 'NetworkError') {
-    console.error('Error Code: 1');
-    process.exit(1);
+  switch (name) {
+    case 'NetworkError':
+      console.error('Error Code: 1');
+      return process.exit(1);
+    case 'FileSystemError':
+      console.error('Error Code: 2');
+      return process.exit(2);
+    default:
+      console.error('Error code 3');
+      return process.exit(3);
   }
-
-  if (name === 'FileSystemError') {
-    console.error('Error Code: 2');
-    process.exit(2);
-  }
-
-  console.error('Error code 3');
-  process.exit(3);
 };
 
 app(url, output)
