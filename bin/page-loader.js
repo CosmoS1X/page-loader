@@ -12,4 +12,24 @@ program
 const [url] = program.args;
 const { output } = program.opts();
 
-app(url, output);
+const catchError = ({ name, message }) => {
+  console.error(message);
+
+  switch (name) {
+    case 'NetworkError':
+      console.error('Error Code: 1');
+      return process.exit(1);
+    case 'FileSystemError':
+      console.error('Error Code: 2');
+      return process.exit(2);
+    default:
+      console.error('Error code 3');
+      return process.exit(3);
+  }
+};
+
+app(url, output)
+  .then((htmlPath) => {
+    console.log(`Page was successfully downloaded into ${htmlPath}`);
+  })
+  .catch((error) => catchError(error));
