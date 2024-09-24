@@ -14,11 +14,10 @@ const axios = require('axios');
 
 export const logger = debug('page-loader');
 
-export const fetchData = (url, responseType = 'json') => axios({
+export const fetchData = (url) => axios({
   url,
   method: 'get',
-  responseType,
-  transformResponse: [(data) => data], // prevent forced JSON.parse
+  responseType: 'arraybuffer',
 })
   .then((response) => response.data)
   .catch((error) => {

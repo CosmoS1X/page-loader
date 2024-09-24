@@ -17,14 +17,12 @@ const getResourcesMeta = (html, baseUrl, resourcesDirPath) => {
 };
 
 const downloadResources = (resourcesMeta) => {
-  const tasks = new Listr(resourcesMeta.map(({ type, url, outputPath }) => {
-    const responseType = type === 'img' ? 'stream' : 'json';
-
-    return {
+  const tasks = new Listr(resourcesMeta.map(({ url, outputPath }) => (
+    {
       title: url,
-      task: () => fetchData(url, responseType).then((data) => saveFile(outputPath, data)),
-    };
-  }), { concurrent: true });
+      task: () => fetchData(url).then((data) => saveFile(outputPath, data)),
+    }
+  )), { concurrent: true });
 
   return tasks.run();
 };
