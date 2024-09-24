@@ -6,6 +6,7 @@ import {
   prettifyHTML,
   sanitizeFileName,
   saveFile,
+  accessDir,
   makeDir,
 } from './utils.js';
 
@@ -31,8 +32,6 @@ const savePage = (htmlPath, { html, resourcesMeta }) => prettifyHTML(html)
   .then((data) => saveFile(htmlPath, data))
   .then(() => resourcesMeta);
 
-const makePageDirs = (...paths) => Promise.all(paths.map((path) => makeDir(path)));
-
 export default (pageUrl, outputDir = process.cwd()) => {
   const { origin: baseUrl, hostname, pathname } = new URL(pageUrl);
   const baseName = sanitizeFileName(buildPath(hostname, pathname));
@@ -41,10 +40,14 @@ export default (pageUrl, outputDir = process.cwd()) => {
   const resourcesDirPath = buildPath(outputDir, resourcesDirName);
   const htmlPath = buildPath(outputDir, htmlName);
 
-  return makePageDirs(outputDir, resourcesDirPath)
+  return accessDir(outputDir)
+    .then(() => makeDir(resourcesDirPath))
     .then(() => fetchData(pageUrl))
     .then((html) => getResourcesMeta(html, baseUrl, resourcesDirPath))
     .then((data) => savePage(htmlPath, data))
     .then((resourcesMeta) => downloadResources(resourcesMeta))
-    .then(() => htmlPath);
+    .then(() => htmlPath)
+    .catch((error) => {
+      throw error;
+    });
 };

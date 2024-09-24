@@ -42,9 +42,12 @@ export const saveFile = (filepath, data) => fsp.writeFile(filepath, data, { enco
     throw new FileSystemError(error);
   });
 
-export const makeDir = (dirpath) => fsp.access(dirpath)
-  // create a new directory if it does not exist
-  .catch(() => fsp.mkdir(dirpath))
+export const accessDir = (dirpath) => fsp.access(dirpath)
+  .catch((error) => {
+    throw new FileSystemError(error);
+  });
+
+export const makeDir = (dirpath) => fsp.mkdir(dirpath)
   .catch((error) => {
     throw new FileSystemError(error);
   });
