@@ -26,7 +26,7 @@ export const fetchData = (url) => axios({
 
 export const buildPath = (...args) => path.join(...args);
 
-export const sanitizeFileName = (name) => name.replace(/[^a-zA-Z0-9]/g, '-');
+export const sanitizeFileName = (name) => name.replace(/[^a-zA-Z0-9]/g, '-').replace(/-$/, '');
 
 export const prettifyHTML = (html) => prettier.format(html, { parser: 'html', tabWidth: 2, printWidth: 600 });
 
