@@ -60,8 +60,8 @@ it('should save images and update HTML links to local paths', async () => {
   const actualImg = await readFile(buildPath(resourcesDir, imgFileName), { encoding: null });
   const actualHTML = await readFile(buildPath(tmpDir, htmlFileName));
 
-  expect(actualImg).toEqual(expectedImg);
-  expect(actualHTML).toBe(expectedHTML);
+  expect(actualImg).toStrictEqual(expectedImg);
+  expect(actualHTML).toStrictEqual(expectedHTML);
 });
 
 it('should save all resources and update HTML links to local paths', async () => {
@@ -101,10 +101,10 @@ it('should save all resources and update HTML links to local paths', async () =>
   const actualJSON = (await readFile(buildPath(resourcesDir, jsonFileName)));
   const actualUpdatedHtml = await readFile(buildPath(tmpDir, htmlFileName));
 
-  expect(actualJS).toBe(expectedJS);
-  expect(actualCSS).toBe(expectedCSS);
-  expect(actualJSON).toBe(expectedJSON);
-  expect(actualUpdatedHtml).toEqual(updatedHTML);
+  expect(actualJS).toStrictEqual(expectedJS);
+  expect(actualCSS).toStrictEqual(expectedCSS);
+  expect(actualJSON).toStrictEqual(expectedJSON);
+  expect(actualUpdatedHtml).toStrictEqual(updatedHTML);
 });
 
 it('should throw an error if the request fails', async () => {

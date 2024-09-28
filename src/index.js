@@ -6,6 +6,7 @@ import {
   prettifyHTML,
   sanitizeFileName,
   saveFile,
+  accessDir,
   makeDir,
 } from './utils.js';
 
@@ -17,14 +18,12 @@ const getResourcesMeta = (html, baseUrl, resourcesDirPath) => {
 };
 
 const downloadResources = (resourcesMeta) => {
-  const tasks = new Listr(resourcesMeta.map(({ type, url, outputPath }) => {
-    const responseType = type === 'img' ? 'stream' : 'json';
-
-    return {
+  const tasks = new Listr(resourcesMeta.map(({ url, outputPath }) => (
+    {
       title: url,
-      task: () => fetchData(url, responseType).then((data) => saveFile(outputPath, data)),
-    };
-  }), { concurrent: true });
+      task: () => fetchData(url).then((data) => saveFile(outputPath, data)),
+    }
+  )), { concurrent: true });
 
   return tasks.run();
 };
@@ -33,20 +32,22 @@ const savePage = (htmlPath, { html, resourcesMeta }) => prettifyHTML(html)
   .then((data) => saveFile(htmlPath, data))
   .then(() => resourcesMeta);
 
-const makePageDirs = (...paths) => Promise.all(paths.map((path) => makeDir(path)));
-
-export default (pageUrl, root) => {
+export default (pageUrl, outputDir = process.cwd()) => {
   const { origin: baseUrl, hostname, pathname } = new URL(pageUrl);
   const baseName = sanitizeFileName(buildPath(hostname, pathname));
   const htmlName = baseName.concat('.html');
   const resourcesDirName = baseName.concat('_files');
-  const resourcesDirPath = buildPath(root, resourcesDirName);
-  const htmlPath = buildPath(root, htmlName);
+  const resourcesDirPath = buildPath(outputDir, resourcesDirName);
+  const htmlPath = buildPath(outputDir, htmlName);
 
-  return makePageDirs(root, resourcesDirPath)
+  return accessDir(outputDir)
+    .then(() => makeDir(resourcesDirPath))
     .then(() => fetchData(pageUrl))
     .then((html) => getResourcesMeta(html, baseUrl, resourcesDirPath))
     .then((data) => savePage(htmlPath, data))
     .then((resourcesMeta) => downloadResources(resourcesMeta))
-    .then(() => htmlPath);
+    .then(() => htmlPath)
+    .catch((error) => {
+      throw error;
+    });
 };

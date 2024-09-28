@@ -14,11 +14,10 @@ const axios = require('axios');
 
 export const logger = debug('page-loader');
 
-export const fetchData = (url, responseType = 'json') => axios({
+export const fetchData = (url) => axios({
   url,
   method: 'get',
-  responseType,
-  transformResponse: [(data) => data], // prevent forced JSON.parse
+  responseType: 'arraybuffer',
 })
   .then((response) => response.data)
   .catch((error) => {
@@ -27,7 +26,7 @@ export const fetchData = (url, responseType = 'json') => axios({
 
 export const buildPath = (...args) => path.join(...args);
 
-export const sanitizeFileName = (name) => name.replace(/[^a-zA-Z0-9]/g, '-');
+export const sanitizeFileName = (name) => name.replace(/[^a-zA-Z0-9]/g, '-').replace(/-$/, '');
 
 export const prettifyHTML = (html) => prettier.format(html, { parser: 'html', tabWidth: 2, printWidth: 600 });
 
@@ -38,14 +37,17 @@ export const buildFileName = (hostname, src) => {
   return sanitizeFileName(url.replace(ext, '')).concat(ext);
 };
 
-export const saveFile = (filepath, data) => fsp.writeFile(filepath, data)
+export const saveFile = (filepath, data) => fsp.writeFile(filepath, data, { encoding: null })
   .catch((error) => {
     throw new FileSystemError(error);
   });
 
-export const makeDir = (dirpath) => fsp.access(dirpath)
-  // create a new directory if it does not exist
-  .catch(() => fsp.mkdir(dirpath))
+export const accessDir = (dirpath) => fsp.access(dirpath)
+  .catch((error) => {
+    throw new FileSystemError(error);
+  });
+
+export const makeDir = (dirpath) => fsp.mkdir(dirpath)
   .catch((error) => {
     throw new FileSystemError(error);
   });

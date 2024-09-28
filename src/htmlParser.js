@@ -24,7 +24,7 @@ const processTag = ($, tagName, baseUrl, resourcesDirPath) => {
 
     $(this).attr(tagAttributeMap[tagName], filePath);
 
-    resourcesMeta.push({ type: tagName, url: href, outputPath });
+    resourcesMeta.push({ url: href, outputPath });
   });
 
   return resourcesMeta;
