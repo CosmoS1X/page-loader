@@ -10,27 +10,27 @@ import {
   makeDir,
 } from './utils.js';
 
-const getResourcesMeta = (html, baseUrl, resourcesDirPath) => {
+const getMeta = (html, baseUrl, resourcesDirPath) => {
   const instance = htmlParser(html);
   const resourcesMeta = instance.processResources(baseUrl, resourcesDirPath);
 
-  return { html: instance.getHTML(), resourcesMeta };
+  return { html: instance.getHTML(), resources: resourcesMeta };
 };
 
-const downloadResources = (resourcesMeta) => {
-  const tasks = new Listr(resourcesMeta.map(({ url, outputPath }) => (
+const downloadResources = (html, baseUrl, resourcesDirPath) => {
+  const meta = getMeta(html, baseUrl, resourcesDirPath);
+  const tasks = new Listr(meta.resources.map(({ url, outputPath }) => (
     {
       title: url,
       task: () => fetchData(url).then((data) => saveFile(outputPath, data)),
     }
   )), { concurrent: true });
 
-  return tasks.run();
+  return makeDir(resourcesDirPath).then(() => tasks.run()).then(() => meta.html);
 };
 
-const savePage = (htmlPath, { html, resourcesMeta }) => prettifyHTML(html)
-  .then((data) => saveFile(htmlPath, data))
-  .then(() => resourcesMeta);
+const savePage = (htmlPath, html) => prettifyHTML(html)
+  .then((data) => saveFile(htmlPath, data));
 
 export default (pageUrl, outputDir = process.cwd()) => {
   const { origin: baseUrl, hostname, pathname } = new URL(pageUrl);
@@ -41,13 +41,8 @@ export default (pageUrl, outputDir = process.cwd()) => {
   const htmlPath = buildPath(outputDir, htmlName);
 
   return accessDir(outputDir)
-    .then(() => makeDir(resourcesDirPath))
     .then(() => fetchData(pageUrl))
-    .then((html) => getResourcesMeta(html, baseUrl, resourcesDirPath))
-    .then((data) => savePage(htmlPath, data))
-    .then((resourcesMeta) => downloadResources(resourcesMeta))
-    .then(() => htmlPath)
-    .catch((error) => {
-      throw error;
-    });
+    .then((html) => downloadResources(html, baseUrl, resourcesDirPath))
+    .then((html) => savePage(htmlPath, html))
+    .then(() => htmlPath);
 };

@@ -10,24 +10,26 @@ const tagAttributeMap = {
 
 const processTag = ($, tagName, baseUrl, resourcesDirPath) => {
   const resourcesDirName = path.basename(resourcesDirPath);
-  const resourcesMeta = [];
 
-  $(tagName).each(function () {
-    const src = $(this).attr(tagAttributeMap[tagName]);
-    const { href, hostname, pathname } = new URL(src, baseUrl);
+  return Array.from($(tagName))
+    .filter((el) => {
+      const src = el.attribs[tagAttributeMap[tagName]];
+      const { href: url } = new URL(src, baseUrl);
 
-    if (!src || !href.startsWith(baseUrl)) return;
+      return src && url.startsWith(baseUrl);
+    })
+    .map((el) => {
+      const { attribs } = el;
+      const src = attribs[tagAttributeMap[tagName]];
+      const { href: url, hostname, pathname } = new URL(src, baseUrl);
+      const fileName = buildFileName(hostname, pathname);
+      const filePath = buildPath(resourcesDirName, fileName);
+      const outputPath = buildPath(resourcesDirPath, fileName);
 
-    const fileName = buildFileName(hostname, pathname);
-    const filePath = buildPath(resourcesDirName, fileName);
-    const outputPath = buildPath(resourcesDirPath, fileName);
+      attribs[tagAttributeMap[tagName]] = filePath;
 
-    $(this).attr(tagAttributeMap[tagName], filePath);
-
-    resourcesMeta.push({ url: href, outputPath });
-  });
-
-  return resourcesMeta;
+      return { url, outputPath };
+    });
 };
 
 export default (html) => {
