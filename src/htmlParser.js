@@ -8,27 +8,28 @@ const tagAttributeMap = {
   script: 'src',
 };
 
-const processTag = ($, tagName, baseUrl, resourcesDirPath) => {
+const handleAttributes = (el, tagName, baseUrl, resourcesDirPath) => {
   const resourcesDirName = path.basename(resourcesDirPath);
-  const resourcesMeta = [];
+  const { attribs } = el;
+  const src = attribs[tagAttributeMap[tagName]];
+  const { href: url, hostname, pathname } = new URL(src, baseUrl);
+  const fileName = buildFileName(hostname, pathname);
+  const filePath = buildPath(resourcesDirName, fileName);
+  const outputPath = buildPath(resourcesDirPath, fileName);
 
-  $(tagName).each(function () {
-    const src = $(this).attr(tagAttributeMap[tagName]);
-    const { href, hostname, pathname } = new URL(src, baseUrl);
+  attribs[tagAttributeMap[tagName]] = filePath;
 
-    if (!src || !href.startsWith(baseUrl)) return;
-
-    const fileName = buildFileName(hostname, pathname);
-    const filePath = buildPath(resourcesDirName, fileName);
-    const outputPath = buildPath(resourcesDirPath, fileName);
-
-    $(this).attr(tagAttributeMap[tagName], filePath);
-
-    resourcesMeta.push({ url: href, outputPath });
-  });
-
-  return resourcesMeta;
+  return { url, outputPath };
 };
+
+const processTag = ($, tagName, baseUrl, resourcesDirPath) => Array.from($(tagName))
+  .filter((el) => {
+    const src = el.attribs[tagAttributeMap[tagName]];
+    const { href: url } = new URL(src, baseUrl);
+
+    return src && url.startsWith(baseUrl);
+  })
+  .map((el) => handleAttributes(el, tagName, baseUrl, resourcesDirPath));
 
 export default (html) => {
   const $ = cheerio.load(html);

@@ -5,7 +5,7 @@ import fsp from 'fs/promises';
 import nock from 'nock';
 import os from 'os';
 import app from '../src/index.js';
-import { buildPath, makeDir, saveFile } from '../src/utils.js';
+import { buildPath, saveFile } from '../src/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -122,7 +122,7 @@ it('should throw an error if the path does not exist', async () => {
 });
 
 it('should throw an error if the app cannot create a dir', async () => {
-  await expect(makeDir('/bin/page-loader')).rejects.toThrow();
+  await expect(fsp.mkdir('/bin/page-loader')).rejects.toThrow();
 });
 
 it('should throw an error if the app cannot save a file', async () => {
