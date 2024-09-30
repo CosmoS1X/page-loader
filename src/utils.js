@@ -29,7 +29,3 @@ export const buildFileName = (hostname, src) => {
 };
 
 export const saveFile = (filepath, data) => fsp.writeFile(filepath, data, { encoding: null });
-
-export const accessDir = (dirpath) => fsp.access(dirpath);
-
-export const makeDir = (dirpath) => fsp.mkdir(dirpath);

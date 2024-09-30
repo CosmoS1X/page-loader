@@ -1,3 +1,4 @@
+import fsp from 'fs/promises';
 import Listr from 'listr';
 import htmlParser from './htmlParser.js';
 import {
@@ -6,8 +7,6 @@ import {
   prettifyHTML,
   sanitizeFileName,
   saveFile,
-  accessDir,
-  makeDir,
 } from './utils.js';
 
 const getMeta = (html, baseUrl, resourcesDirPath) => {
@@ -26,7 +25,7 @@ const downloadResources = (html, baseUrl, resourcesDirPath) => {
     }
   )), { concurrent: true });
 
-  return makeDir(resourcesDirPath).then(() => tasks.run()).then(() => meta.html);
+  return fsp.mkdir(resourcesDirPath).then(() => tasks.run()).then(() => meta.html);
 };
 
 const savePage = (htmlPath, html) => prettifyHTML(html)
@@ -40,7 +39,7 @@ export default (pageUrl, outputDir = process.cwd()) => {
   const resourcesDirPath = buildPath(outputDir, resourcesDirName);
   const htmlPath = buildPath(outputDir, htmlName);
 
-  return accessDir(outputDir)
+  return fsp.access(outputDir)
     .then(() => fetchData(pageUrl))
     .then((html) => downloadResources(html, baseUrl, resourcesDirPath))
     .then((html) => savePage(htmlPath, html))
