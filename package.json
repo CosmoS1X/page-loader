@@ -8,7 +8,14 @@
     "page-loader": "bin/page-loader.js"
   },
   "scripts": {
-    "test": "DEBUG=page-loader npx jest"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage --coverageProvider=v8",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "clean": "rm -rf dist",
+    "build": "tsc && chmod +x dist/bin/page-loader.js"
   },
   "repository": {
     "type": "git",
