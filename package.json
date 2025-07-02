@@ -1,11 +1,11 @@
 {
-  "name": "@hexlet/code",
+  "name": "@cosmo.dev/page-loader",
   "version": "1.0.0",
-  "description": "Page Loader",
-  "main": "src/index.js",
-  "type": "module",
+  "description": "An utility for downloading web pages and their resources",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "bin": {
-    "page-loader": "bin/page-loader.js"
+    "page-loader": "dist/bin/page-loader.js"
   },
   "scripts": {
     "test": "jest",
