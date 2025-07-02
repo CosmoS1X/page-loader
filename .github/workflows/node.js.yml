@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [24.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -27,8 +27,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: make deps-install
-    - run: make lint
-    - run: make test
+    - run: make check
+    - run: make build
     - name: Test & publish code coverage
       uses: paambaati/codeclimate-action@v9.0.0
       env:
