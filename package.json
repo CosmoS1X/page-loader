@@ -17,6 +17,14 @@
     "clean": "rm -rf dist",
     "build": "tsc && chmod +x dist/bin/page-loader.js"
   },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CosmoS1X/backend-project-4.git"
