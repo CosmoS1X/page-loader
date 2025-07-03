@@ -1,24 +1,34 @@
-install: deps-install link
+install: deps-install build link
 
 deps-install:
-	npm ci
+	npm install
 
 link:
 	npm link
 
-check: lint test
+type-check:
+	npm run type-check
 
 lint:
-	npx eslint .
+	npm run lint
+
+lint-fix:
+	npm run lint:fix
 
 test:
-	npm test
+	npm run test
 
 test-coverage:
-	npm test -- --coverage --coverageProvider=v8
+	npm run test:coverage
 
-run:
-	node bin/page-loader.js
+check: type-check test lint
+	@echo "All checks passed!"
+
+clean:
+	npm run clean
+
+build: clean
+	npm run build
 
 publish:
 	npm publish --dry-run

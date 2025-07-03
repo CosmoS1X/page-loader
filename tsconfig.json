@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "strict": true,
+    "target": "es5",
+    "module": "commonjs",
+    "outDir": "dist",
+    "sourceMap": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+  },
+  "include": ["src", "bin"],
+  "exclude": ["*.test.ts"],
+}

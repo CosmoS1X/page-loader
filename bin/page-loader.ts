@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import axios from 'axios';
-import app from '../src/index.js';
+import app from '../src/index';
 
 program
   .version('1.0.0')
@@ -19,7 +19,7 @@ app(url, output)
   })
   .catch((error) => {
     if (axios.isAxiosError(error)) {
-      console.error(`${error.code}: ${error.message}, fetch ${error.config.url}`);
+      console.error(`${error.code}: ${error.message}, fetch ${error.config?.url}`);
       console.error('Error code: 1');
       process.exit(1);
     }

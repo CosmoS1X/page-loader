@@ -1,21 +1,22 @@
-import { beforeEach, it, expect } from '@jest/globals';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import fsp from 'fs/promises';
 import nock from 'nock';
 import os from 'os';
-import app from '../src/index.js';
-import { buildPath, saveFile } from '../src/utils.js';
+import app from '../src';
+import { buildPath, saveFile } from '../src/utils';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const getFixturePath = (filename: string) => path.join(__dirname, '..', '__fixtures__', filename);
 
-const getFixturePath = (filename) => path.join(__dirname, '..', '__fixtures__', filename);
-const readFile = (filepath, options = { encoding: 'utf-8' }) => fsp.readFile(filepath, options);
+type ReadFile = (
+  filepath: string, options?: { encoding: BufferEncoding | null }
+) => Promise<string | Buffer>;
+
+const readFile: ReadFile = (filepath, options = { encoding: 'utf-8' }) => fsp.readFile(filepath, options);
 
 nock.disableNetConnect();
 
-let tmpDir;
+let tmpDir: string;
+
 const { href: url, origin: baseUrl } = new URL('https://ru.hexlet.io/courses');
 const htmlFileName = 'ru-hexlet-io-courses.html';
 const resourcesDirName = 'ru-hexlet-io-courses_files';
